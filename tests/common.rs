@@ -4,17 +4,21 @@ use std::{
     net::{SocketAddr, TcpStream as StdTcpStream},
     sync::Mutex,
 };
+#[cfg(not(windows))]
+use tokio::net::UnixStream;
 use tokio::{
     io::{copy, split, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
-    net::{TcpListener, UnixStream},
+    net::TcpListener,
     runtime::Runtime,
 };
+#[cfg(not(windows))]
+use tokio_socks::Error;
 use tokio_socks::{
     tcp::{Socks5Listener, Socks5Stream},
-    Error,
     Result,
 };
 
+#[cfg(not(windows))]
 pub const UNIX_PROXY_ADDR: &'static str = "/tmp/proxy.s";
 pub const PROXY_ADDR: &'static str = "127.0.0.1:41080";
 pub const ECHO_SERVER_ADDR: &'static str = "localhost:10007";
@@ -60,6 +64,7 @@ pub fn test_bind<S: 'static + AsyncRead + AsyncWrite + Unpin + Send>(listener: S
     Ok(())
 }
 
+#[cfg(not(windows))]
 pub async fn connect_unix() -> Result<UnixStream> {
     UnixStream::connect(UNIX_PROXY_ADDR).await.map_err(Error::Io)
 }

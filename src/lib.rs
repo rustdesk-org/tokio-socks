@@ -260,6 +260,7 @@ impl<'a> Authentication<'a> {
 
 mod error;
 pub mod tcp;
+pub mod udp;
 
 #[cfg(test)]
 mod tests {

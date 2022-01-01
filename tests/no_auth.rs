@@ -1,7 +1,10 @@
 mod common;
 
 use crate::common::{runtime, test_bind};
+#[cfg(not(windows))]
 use common::{connect_unix, test_connect, ECHO_SERVER_ADDR, PROXY_ADDR};
+#[cfg(windows)]
+use common::{test_connect, ECHO_SERVER_ADDR, PROXY_ADDR};
 use tokio_socks::{
     tcp::{Socks5Listener, Socks5Stream},
     Result,
@@ -25,18 +28,32 @@ fn bind_no_auth() -> Result<()> {
 
 #[test]
 fn connect_with_socket_no_auth() -> Result<()> {
-    let runtime = runtime().lock().unwrap();
-    let socket = runtime.block_on(connect_unix())?;
-    let conn = runtime.block_on(Socks5Stream::connect_with_socket(socket, ECHO_SERVER_ADDR))?;
-    runtime.block_on(test_connect(conn))
+    #[cfg(not(windows))]
+    {
+        let runtime = runtime().lock().unwrap();
+        let socket = runtime.block_on(connect_unix())?;
+        let conn = runtime.block_on(Socks5Stream::connect_with_socket(socket, ECHO_SERVER_ADDR))?;
+        runtime.block_on(test_connect(conn))
+    }
+    #[cfg(windows)]
+    {
+        Ok(())
+    }
 }
 
 #[test]
 fn bind_with_socket_no_auth() -> Result<()> {
-    let bind = {
-        let runtime = runtime().lock().unwrap();
-        let socket = runtime.block_on(connect_unix())?;
-        runtime.block_on(Socks5Listener::bind_with_socket(socket, ECHO_SERVER_ADDR))
-    }?;
-    test_bind(bind)
+    #[cfg(not(windows))]
+    {
+        let bind = {
+            let runtime = runtime().lock().unwrap();
+            let socket = runtime.block_on(connect_unix())?;
+            runtime.block_on(Socks5Listener::bind_with_socket(socket, ECHO_SERVER_ADDR))
+        }?;
+        test_bind(bind)
+    }
+    #[cfg(windows)]
+    {
+        Ok(())
+    }
 }

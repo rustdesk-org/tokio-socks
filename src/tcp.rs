@@ -91,6 +91,47 @@ impl Socks5Stream<TcpStream> {
         .await
     }
 
+    /// Associate to a target server through a SOCKS5 proxy given the proxy
+    /// address.
+    ///
+    /// # Error
+    ///
+    /// It propagates the error that occurs in the conversion from `T` to
+    /// `TargetAddr`.
+    pub async fn associate<'t, P, T>(proxy: P, local: T) -> Result<Socks5Stream<TcpStream>>
+    where
+        P: ToProxyAddrs,
+        T: IntoTargetAddr<'t>,
+    {
+        Self::execute_command(proxy, local, Authentication::None, Command::Associate).await
+    }
+
+    /// Associate to a target server through a SOCKS5 proxy using given
+    /// username, password and the address of the proxy.
+    ///
+    /// # Error
+    ///
+    /// It propagates the error that occurs in the conversion from `T` to
+    /// `TargetAddr`.
+    pub async fn associate_with_password<'a, 't, P, T>(
+        proxy: P,
+        local: T,
+        username: &'a str,
+        password: &'a str,
+    ) -> Result<Socks5Stream<TcpStream>>
+    where
+        P: ToProxyAddrs,
+        T: IntoTargetAddr<'t>,
+    {
+        Self::execute_command(
+            proxy,
+            local,
+            Authentication::Password { username, password },
+            Command::Associate,
+        )
+        .await
+    }
+
     #[cfg(feature = "tor")]
     /// Resolve the domain name to an ip using special Tor Resolve command, by
     /// connecting to a Tor compatible proxy given it's address.
@@ -173,6 +214,44 @@ where S: AsyncRead + AsyncWrite + Unpin
             target,
             Authentication::Password { username, password },
             Command::Connect,
+        )
+        .await
+    }
+
+    /// Associate to a target server through a SOCKS5 proxy given the proxy
+    /// address.
+    ///
+    /// # Error
+    ///
+    /// It propagates the error that occurs in the conversion from `T` to
+    /// `TargetAddr`.
+    pub async fn associate_with_socket<'t, T>(socket: S, local: T) -> Result<Socks5Stream<S>>
+    where T: IntoTargetAddr<'t> {
+        Self::execute_command_with_socket(socket, local, Authentication::None, Command::Associate).await
+    }
+
+    /// Associate to a target server through a SOCKS5 proxy using given
+    /// username, password and the address of the proxy.
+    ///
+    /// # Error
+    ///
+    /// It propagates the error that occurs in the conversion from `T` to
+    /// `TargetAddr`.
+    pub async fn associate_with_password_and_socket<'a, 't, P, T>(
+        socket: S,
+        local: T,
+        username: &'a str,
+        password: &'a str,
+    ) -> Result<Socks5Stream<S>>
+    where
+        P: ToProxyAddrs,
+        T: IntoTargetAddr<'t>,
+    {
+        Self::execute_command_with_socket(
+            socket,
+            local,
+            Authentication::Password { username, password },
+            Command::Associate,
         )
         .await
     }
@@ -290,8 +369,7 @@ where S: Stream<Item = Result<SocketAddr>> + Unpin
     pub async fn execute_with_socket<T: AsyncRead + AsyncWrite + Unpin>(
         &mut self,
         mut socket: T,
-    ) -> Result<Socks5Stream<T>>
-    {
+    ) -> Result<Socks5Stream<T>> {
         self.authenticate(&mut socket).await?;
 
         // Send request address that should be proxied
