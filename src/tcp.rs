@@ -363,7 +363,18 @@ where S: Stream<Item = Result<SocketAddr>> + Unpin
             .await
             .map_err(|_| Error::ProxyServerUnreachable)?;
 
-        self.execute_with_socket(tcp).await
+        // Some socks proxy returns private ip event the client is in intranet.
+        // If proxy is not in intranet but returns private ip.
+        // The following code changes target addr to global address.
+        let mut stream = self.execute_with_socket(tcp).await?;
+        if let TargetAddr::Ip(SocketAddr::V4(target_addr)) = &mut stream.target {
+            if let SocketAddr::V4(proxy_addr) = next_addr {
+                if target_addr.ip().is_private() && !proxy_addr.ip().is_private() {
+                    target_addr.set_ip(*proxy_addr.ip());
+                };
+            };
+        };
+        Ok(stream)
     }
 
     pub async fn execute_with_socket<T: AsyncRead + AsyncWrite + Unpin>(
