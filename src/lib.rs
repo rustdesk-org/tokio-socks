@@ -242,6 +242,15 @@ where T: IntoTargetAddr<'a> + Copy
     }
 }
 
+impl<'a> ToString for TargetAddr<'a> {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Ip(addr) => addr.to_string(),
+            Self::Domain(d, p) => format!("{}:{}", d, p),
+        }
+    }
+}
+
 /// Authentication methods
 #[derive(Debug)]
 enum Authentication<'a> {
@@ -371,5 +380,16 @@ mod tests {
         assert!(into_target_addr(addr).is_err());
         let addr = "www.example.com:65536";
         assert!(into_target_addr(addr).is_err());
+    }
+
+    #[test]
+    fn target_addr_to_string() {
+        let domain = "www.example.com:80";
+        let res = into_target_addr(domain).unwrap().to_string();
+        assert_eq!(domain, res.as_str());
+
+        let domain = "0.0.0.0:80";
+        let res = into_target_addr(domain).unwrap().to_string();
+        assert_eq!(domain, res.as_str());
     }
 }
