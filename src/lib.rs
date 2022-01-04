@@ -118,6 +118,20 @@ impl<'a> TargetAddr<'a> {
             TargetAddr::Domain(domain, port) => TargetAddr::Domain(String::from(domain.clone()).into(), *port),
         }
     }
+
+    pub fn port(&self) -> u16 {
+        match self {
+            TargetAddr::Ip(addr) => addr.port(),
+            TargetAddr::Domain(_, port) => *port,
+        }
+    }
+
+    pub fn set_port(&mut self, port: u16) {
+        match self {
+            TargetAddr::Ip(addr) => addr.set_port(port),
+            TargetAddr::Domain(_, p) => *p = port,
+        }
+    }
 }
 
 impl<'a> ToSocketAddrs for TargetAddr<'a> {
@@ -391,5 +405,19 @@ mod tests {
         let domain = "0.0.0.0:80";
         let res = into_target_addr(domain).unwrap().to_string();
         assert_eq!(domain, res.as_str());
+    }
+
+    #[test]
+    fn target_addr_set_port() {
+        let domain = "www.example.com:80";
+        let mut res = into_target_addr(domain).unwrap();
+        let port = 16u16;
+        res.set_port(16u16);
+        assert_eq!(port, res.port());
+
+        let domain = "0.0.0.0:80";
+        let mut res = into_target_addr(domain).unwrap();
+        res.set_port(16u16);
+        assert_eq!(port, res.port());
     }
 }
