@@ -97,7 +97,7 @@ impl Stream for ProxyAddrsStream {
 }
 
 /// A SOCKS connection target.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TargetAddr<'a> {
     /// Connect to an IP address.
     Ip(SocketAddr),
