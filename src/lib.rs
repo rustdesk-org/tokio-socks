@@ -109,6 +109,16 @@ pub enum TargetAddr<'a> {
     Domain(Cow<'a, str>, u16),
 }
 
+impl<'a> std::convert::From<TargetAddr<'a>> for SocketAddr {
+    fn from(item: TargetAddr<'a>) -> Self {
+        if let TargetAddr::Ip(addr) = item {
+            addr
+        } else {
+            SocketAddr::from(([0, 0, 0, 0], 0))                  
+        }                                                    
+    }                                                        
+}
+
 impl<'a> TargetAddr<'a> {
     /// Creates owned `TargetAddr` by cloning. It is usually used to eliminate
     /// the lifetime bound.
@@ -332,6 +342,8 @@ mod tests {
         let addr = SocketAddr::from(([1, 1, 1, 1], 443));
         let res = into_target_addr(addr)?;
         assert_eq!(TargetAddr::Ip(addr), res);
+        let addr2: SocketAddr = res.into();
+        assert_eq!(addr, addr2);
         Ok(())
     }
 
