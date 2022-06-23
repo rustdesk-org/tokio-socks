@@ -114,7 +114,7 @@ impl Stream for Socks5UdpFramed {
         let this = self.project();
         match this.framed.poll_next(cx) {
             Poll::Ready(d) => return Poll::Ready(d),
-            _ => {}
+            _ => {},
         }
 
         let mut buf = [0u8; 512];
@@ -122,10 +122,12 @@ impl Stream for Socks5UdpFramed {
         match this.stream.poll_read(cx, &mut buf) {
             Poll::Ready(Err(e)) => {
                 return Poll::Ready(Some(Err(Error::Io(e))));
-            }
-            _ => {
-                // just ignore received data?
-            }
+            },
+            Poll::Ready(Ok(())) => {
+                // Maybe socks5 server down. Return None.
+                return Poll::Ready(None);
+            },
+            Poll::Pending => {},
         }
 
         Poll::Pending
@@ -215,7 +217,7 @@ impl Decoder for Socks5UdpCodec {
                     let port = u16::from_be_bytes([buf[8], buf[9]]);
                     msg.dst_addr = TargetAddr::Ip(SocketAddr::from((ip, port)));
                     cursor = 10;
-                }
+                },
                 // IPv6
                 0x04 => {
                     if buf_len < 22 {
@@ -232,7 +234,7 @@ impl Decoder for Socks5UdpCodec {
                     let port = u16::from_be_bytes([buf[20], buf[21]]);
                     msg.dst_addr = TargetAddr::Ip(SocketAddr::from((ip, port)));
                     cursor = 22;
-                }
+                },
                 // Domain
                 0x03 => {
                     let len = buf[4] as usize;
@@ -251,7 +253,7 @@ impl Decoder for Socks5UdpCodec {
                     let port = u16::from_be_bytes([buf[5 + len], buf[5 + len + 1]]);
                     msg.dst_addr = TargetAddr::Domain(domain.into(), port);
                     cursor = 5 + len + 2;
-                }
+                },
 
                 _ => Err(Error::UnknownAddressType)?,
             }
@@ -285,13 +287,13 @@ impl Encoder<(Bytes, TargetAddr<'static>)> for Socks5UdpCodec {
                 header[3] = 0x01;
                 addr_port.put_slice(&addr.ip().octets());
                 addr_port.put_slice(&addr.port().to_be_bytes());
-            }
+            },
             TargetAddr::Ip(SocketAddr::V6(addr)) => {
                 addr_port.reserve(18);
                 header[3] = 0x04;
                 addr_port.put_slice(&addr.ip().octets());
                 addr_port.put_slice(&addr.port().to_be_bytes());
-            }
+            },
             TargetAddr::Domain(domain, port) => {
                 let doman_len = domain.len();
                 addr_port.reserve(1 + doman_len + 2);
@@ -299,7 +301,7 @@ impl Encoder<(Bytes, TargetAddr<'static>)> for Socks5UdpCodec {
                 addr_port.put_u8(doman_len as u8);
                 addr_port.put_slice(domain.as_bytes());
                 addr_port.put_slice(&port.to_be_bytes());
-            }
+            },
         }
         header.extend(addr_port);
 
