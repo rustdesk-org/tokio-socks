@@ -33,7 +33,7 @@ tokio-util = { version = "0.7", features = ["codec", "net"] }
 futures-core = "0.3"
 futures-sink = "0.3"
 bytes = "1.6"
-either = "1.11"
+either = "1.9"
 thiserror = "1.0"
 pin-project = "1.1"
 
