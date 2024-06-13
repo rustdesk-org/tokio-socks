@@ -8,7 +8,7 @@ readme = "README.md"
 categories = ["asynchronous", "network-programming"]
 keywords = ["tokio", "async", "proxy", "socks", "socks5"]
 license = "MIT"
-version = "0.5.2"
+version = "0.5.2-1"
 authors = ["Yilin Chen <sticnarf@gmail.com>"]
 edition = "2018"
 
@@ -28,7 +28,7 @@ required-features = ["tor"]
 
 [dependencies]
 futures-util = { version = "0.3", default-features = false }
-tokio = { version = "1.37", features = ["io-util", "net"] }
+tokio = { version = "1.38", features = ["io-util", "net"] }
 tokio-util = { version = "0.7", features = ["codec", "net"] }
 futures-core = "0.3"
 futures-sink = "0.3"
